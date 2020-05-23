@@ -1,6 +1,7 @@
 ### Custom ###
 config.py
 db.sqlite
+*.wsgi
 
 
 # Created by https://www.gitignore.io/api/flask,python
