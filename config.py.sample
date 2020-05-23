@@ -1,0 +1,5 @@
+params = {
+    "password": "your password for the application",
+    "path": "base path of the application, without a trailing slash",
+    "db_path": "path to the sqlite database"
+}

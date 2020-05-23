@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Repas</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="static/style.css" rel="stylesheet">
+    </head>
+    <body>
+        <h3>Rechercher un plat</h3>
+        <form id="search_meal_form">
+            <label>Mode de recherche</label>
+            <select name="mode">
+                <option value="search">Recherche</option>
+                <option value="random">Aléatoire</option>
+            </select>
+            <br>
+            <label>Titre</label>
+            <input type="text" name="title">
+            <br>
+            <label>Repas</label>
+            <select name="meal_time">
+                <option value="">Non spécifié</option>
+                <option value="-1">Tous</option>
+                <option value="0">Déjeuner</option>
+                <option value="1">Diner</option>
+            </select>
+            <br>
+            <label>Type</label>
+            <select name="meal_entry">
+                <option value="">Non spécifié</option>
+                <option value="1">Plat principal</option>
+                <option value="0">Entrée</option>
+                <option value="2">Dessert</option>
+            </select>
+            <br>
+            <label>Saison</label>
+            <select name="season">
+                <option value="">Non spécifié</option>
+                <option value="-1">Toutes</option>
+                <option value="0">Printemps</option>
+                <option value="1">Eté</option>
+                <option value="2">Automne</option>
+                <option value="3">Hiver</option>
+            </select>
+            <br>
+            <label>Ingrédients</label>
+            <input id="select_ingredient_search" type="button" value="Ajouter">
+            <div id="ingredient_list_search"></div>
+            <br>
+            <label>Temps de préparation max (en min)</label>
+            <input type="number" name="preparation_time_max" min="0">
+            <br>
+            <label>Temps de cuisson max (en min)</label>
+            <input type="number" name="cook_time_max" min="0">
+            <br>
+            <label>Temps total max (en min)</label>
+            <input type="number" name="total_time_max" min="0">
+            <br>
+            <button type="button" onclick="search_meal()">Rechercher</button>
+        </form>
+
+        <p id="search_form_info" style="color: red;"></p>
+
+        <h4>Résultats</h4>
+        <div id="search_result"></div>
+
+        <h3>Ajouter un plat</h3>
+        <form id="add_meal_form">
+            <label>Titre</label>
+            <input id="meal_title" type="text" name="title">
+            <br>
+            <label>Description</label>
+            <input id="meal_description" type="text" name="description">
+            <br>
+            <label>Repas</label>
+            <select name="meal_time">
+                <option value="-1">Tous</option>
+                <option value="0">Déjeuner</option>
+                <option value="1">Diner</option>
+            </select>
+            <br>
+            <label>Type</label>
+            <select name="meal_entry">
+                <option value="1">Plat principal</option>
+                <option value="0">Entrée</option>
+                <option value="2">Dessert</option>
+            </select>
+            <br>
+            <label>Saison</label>
+            <select name="season">
+                <option value="-1">Toutes</option>
+                <option value="0">Printemps</option>
+                <option value="1">Eté</option>
+                <option value="2">Automne</option>
+                <option value="3">Hiver</option>
+            </select>
+            <br>
+            <label>Ingrédients</label><input id="select_ingredient" type="button" value="Ajouter">
+            <div id="ingredient_list"></div>
+            <br>
+            <label>Temps de préparation (min)</label>
+            <input type="number" name="preparation_time" min="0">
+            <br>
+            <label>Temps de cuisson (min)</label>
+            <input type="number" name="cook_time" min="0">
+            <br>
+            <button type="button" onclick="add_meal()">Ajouter</button>
+        </form>
+        <p id="meal_added" style="color: red;"></p>
+        
+        <h3>Ajouter un nouvel ingrédient</h3>
+        <p>Les accents et les majuscules seront retirés lors de l'ajout à la base de données.</p>
+        <div>
+            <input id="new_ingredient_name" type="text" placeholder="Nom">
+            <button id="new_ingredient">Ajouter</button>
+        </div>
+        <p id="new_ingredient_info" style="color: red;"></p>
+
+        <h3>Supprimer un ingrédient</h3>
+        <p>Supprime également l'ingrédient de tous les plats où il est utilisé.</p>
+        <input id="ingredient_search_delete" type="text" name="ingredient_search" placeholder="Rechercher...">
+        <br>
+        <select id="ingredient_selector_delete" size="5">
+            <option></option>
+        </select>  
+        <br>
+        <button id="delete_selected_ingredient" type="button" onclick="">Supprimer</button>
+        <p id="delete_ingredient_info" style="color: red;"></p>
+
+        <div id="add_ingredient_modal" class="modal">
+            <div class="modal_content">
+                <span id="close_modal" class="close">&times;</span>
+                <h3>Sélectionner un ingrédient</h3>
+                    
+                <div>
+                    <input id="ingredient_search" type="text" name="ingredient_search" placeholder="Rechercher...">
+                    <br>
+                    <select id="ingredient_selector" size="5">
+                        <option></option>
+                    </select>  
+                    <br>
+                    <button id="add_selected_ingredient" type="button" onclick="">Sélectionner</button>
+                </div>
+
+                <p id="modal_info" style="color: red;"></p>
+            </div>
+        </div>
+    </body>
+
+    <script>
+        let modal_owner = ""
+        /* Search */
+        // Search meal
+        function search_meal() {
+            let form = document.getElementById("search_meal_form");
+            let info = document.getElementById("search_form_info");
+            let response_area = document.getElementById("search_result");
+            let data = new FormData(form);
+            
+            let ingredients = []
+            let ingredient_list = document.getElementById("ingredient_list_search");
+            if (ingredient_list.hasChildNodes()) {
+                for (let i = 0; i < ingredient_list.childNodes.length; i++) {
+                    let ingredient_id = parseInt(ingredient_list.childNodes[i].getAttribute("ingredient_id"));
+                    ingredients.push(ingredient_id);
+                    //data.delete("ingredient_" + i);
+                }
+            }
+            data.append("ingredients", JSON.stringify(ingredients));
+            let query_str = new URLSearchParams(data).toString();
+
+            let http = new XMLHttpRequest();
+            const url = "{{ params['path'] }}" + "/api/meals"
+            
+            http.addEventListener("load", e => {
+                let response = JSON.parse(e.target.response);
+                if (e.target.status !== 200) {
+                    info.innerText = "Erreur serveur, reportez à l'admin."
+                    console.log(e.target);
+                }
+                else {
+                    let response_data = response.data;
+                    info.innerText = "";
+                    response_area.innerHTML = "";
+                    if (data.get("mode") === "random") {
+                        let meal = response_data
+                        let meal_time_str = ""
+                        switch (meal.meal_time) {
+                            case -1:
+                                meal_time_str = "Tous"
+                                break;
+                            case 0:
+                                meal_time_str = "Déjeuner"
+                                break;
+                            case 1:
+                                meal_time_str = "Dîner"
+                                break;
+                        }
+                        let meal_entry_str = ""
+                        switch (meal.meal_entry) {
+                            case 0:
+                                meal_entry_str = "Entrée"
+                                break;
+                            case 1:
+                                meal_entry_str = "Plat"
+                                break;
+                            case 2:
+                                meal_entry_str = "Dessert"
+                                break;
+                        }
+                        let season_str = ""
+                        switch (meal.season) {
+                            case -1: season_str = "Toutes"; break;
+                            case 0: season_str = "Printemps"; break;
+                            case 1: season_str = "Eté"; break;
+                            case 2: season_str = "Automne"; break;
+                            case 3: season_str = "Hiver"; break;
+                        }
+                        
+                        let http2 = new XMLHttpRequest();
+                        let url2 = "{{ params['path'] }}" + "/api/ingredients?mode=many&q=" + encodeURI(JSON.stringify(meal.ingredients));
+
+                        http2.addEventListener("load", e => {
+                            if (e.target.status !== 200) {
+                                info.innerText = "Erreur serveur, reportez à l'admin."
+                                console.log(e.target);
+                            }
+                            else {
+                                ingredients_str = "";
+                                for (let ingredient of JSON.parse(e.target.response).data) {
+                                    ingredients_str += ingredient.name + ", "
+                                }
+
+                                let html = "<div meal_id="+meal.id+">"+
+                                    "<p>Titre: "+meal.title+"</p>"+
+                                    "<p>Description: "+meal.description+"</p>"+
+                                    "<p>Repas: "+meal_time_str+"</p>"+
+                                    "<p>Type: "+meal_entry_str+"</p>"+
+                                    "<p>Saison: "+season_str+"</p>"+
+                                    "<p>Ingrédients: "+ingredients_str+"</p>"+
+                                    "<p>Temps de préparation: "+meal.preparation_time+" min</p>"+
+                                    "<p>Temps de cuisson: "+meal.cook_time+" min</p>"+
+                                    "<button id='delete_meal_"+meal.id+"'>Supprimer ce plat</button>"+
+                                    "<p id='delete_meal_info_"+meal.id+"' style='color: red;'></p>"+
+                                    "<hr>"+
+                                    "</div>"
+
+                                response_area.insertAdjacentHTML("beforeend", html)
+
+                                meal_delete = document.getElementById("delete_meal_" + meal.id);
+                                meal_delete.addEventListener("click", e => {
+                                    let http3 = new XMLHttpRequest();
+                                    let url3 = "{{ params['path'] }}/api/meals/" + meal.id
+                                    let delete_meal_info = document.getElementById("delete_meal_info_"+meal.id);
+                                    http3.addEventListener("load", e => {
+                                        if (e.target.status !== 200) {
+                                            delete_meal_info.innerText = "Erreur serveur, reportez à l'admin.";
+                                            console.log(e.target);
+                                        }
+                                        else {
+                                            delete_meal_info.innerText = "Repas supprimé !";
+                                        }
+                                    });
+                                    http3.addEventListener("error", e => {
+                                        delete_meal_info.innerText = "Erreur lors de la requête, reportez à l'admin.";
+                                        console.log(e);
+                                    });
+                                    http3.open("DELETE", url3);
+                                    http3.send();
+                                });
+                            }
+                        });
+
+                        http2.addEventListener("error", e => {
+                            console.log(e);
+                            info.innerText = "Erreur lors de la requête, reportez à l'admin.";
+                        });
+
+                        http2.open("GET", url2);
+                        http2.send();
+                    }
+                    else if (data.get("mode") === "search") {
+                        for (let meal of response_data.slice(0, 6)) {
+                            let meal_time_str = ""
+                            switch (meal.meal_time) {
+                                case -1:
+                                    meal_time_str = "Tous"
+                                    break;
+                                case 0:
+                                    meal_time_str = "Déjeuner"
+                                    break;
+                                case 1:
+                                    meal_time_str = "Dîner"
+                                    break;
+                            }
+                            let meal_entry_str = ""
+                            switch (meal.meal_entry) {
+                                case 0:
+                                    meal_entry_str = "Entrée"
+                                    break;
+                                case 1:
+                                    meal_entry_str = "Plat Principal"
+                                    break;
+                                case 2:
+                                    meal_entry_str = "Dessert"
+                                    break;
+                            }
+                            let season_str = ""
+                            switch (meal.season) {
+                                case -1: season_str = "Toutes"; break;
+                                case 0: season_str = "Printemps"; break;
+                                case 1: season_str = "Eté"; break;
+                                case 2: season_str = "Automne"; break;
+                                case 3: season_str = "Hiver"; break;
+                            }
+                            
+                            let http2 = new XMLHttpRequest();
+                            let url2 = "{{ params['path'] }}" + "/api/ingredients?mode=many&q=" + encodeURI(JSON.stringify(meal.ingredients));
+
+                            http2.addEventListener("load", e => {
+                                if (e.target.status !== 200) {
+                                    info.innerText = "Erreur serveur, reportez à l'admin."
+                                    console.log(e.target);
+                                }
+                                else {
+                                    ingredients_str = "";
+                                    for (let ingredient of JSON.parse(e.target.response).data) {
+                                        ingredients_str += ingredient.name + ", "
+                                    }
+
+                                    let html = "<div meal_id="+meal.id+">"+
+                                        "<p>Titre: "+meal.title+"</p>"+
+                                        "<p>Description: "+meal.description+"</p>"+
+                                        "<p>Repas: "+meal_time_str+"</p>"+
+                                        "<p>Type: "+meal_entry_str+"</p>"+
+                                        "<p>Saison: "+season_str+"</p>"+
+                                        "<p>Ingrédients: "+ingredients_str+"</p>"+
+                                        "<p>Temps de préparation: "+meal.preparation_time+" min</p>"+
+                                        "<p>Temps de cuisson: "+meal.cook_time+" min</p>"+
+                                        "<button id='delete_meal_"+meal.id+"'>Supprimer ce plat</button>"+
+                                        "<p id='delete_meal_info_"+meal.id+"' style='color: red;'></p>"+
+                                        "<hr>"+
+                                        "</div>"
+
+                                    response_area.insertAdjacentHTML("beforeend", html)
+
+                                    meal_delete = document.getElementById("delete_meal_" + meal.id);
+                                    meal_delete.addEventListener("click", e => {
+                                        let http3 = new XMLHttpRequest();
+                                        let url3 = "{{ params['path'] }}/api/meals/" + meal.id
+                                        let delete_meal_info = document.getElementById("delete_meal_info_"+meal.id);
+                                        http3.addEventListener("load", e => {
+                                            if (e.target.status !== 200) {
+                                                delete_meal_info.innerText = "Erreur serveur, reportez à l'admin.";
+                                                console.log(e.target);
+                                            }
+                                            else {
+                                                delete_meal_info.innerText = "Repas supprimé !";
+                                            }
+                                        });
+                                        http3.addEventListener("error", e => {
+                                            delete_meal_info.innerText = "Erreur lors de la requête, reportez à l'admin.";
+                                            console.log(e);
+                                        });
+                                        http3.open("DELETE", url3);
+                                        http3.send();
+                                    });
+                                }
+                            });
+
+                            http2.addEventListener("error", e => {
+                                console.log(e);
+                                info.innerText = "Erreur lors de la requête, reportez à l'admin.";
+                            });
+
+                            http2.open("GET", url2);
+                            http2.send();
+                        }
+                    }
+                }
+            });
+
+            http.addEventListener("error", e => {
+                info.innerText = "Erreur lors de la requête, reportez à l'admin.";
+                console.log(e);
+            });
+
+            http.open("GET", url + "?" + query_str);
+            http.send();
+        }
+
+        // Search ingredient modal
+        document.getElementById("select_ingredient_search").addEventListener("click", e => {
+            add_ingredient_modal_open();
+            modal_owner = "search_meal"
+        });
+        
+
+        /* Add Ingredient modal */
+        let modal = document.getElementById("add_ingredient_modal");
+
+        // Open modal
+        function add_ingredient_modal_open() {
+            modal.style.display = "block";
+        }
+        document.getElementById("select_ingredient").addEventListener("click", e => {
+            add_ingredient_modal_open();
+            modal_owner = "add_meal"
+        });
+
+        // Close modal
+        function add_ingredient_modal_close() {
+            document.getElementById("add_ingredient_modal").style.display = "none";
+        }
+        document.getElementById("close_modal").addEventListener("click", add_ingredient_modal_close);
+        
+        // Query server for ingredients
+        let ingredient_search = document.getElementById("ingredient_search");
+        ingredient_search.addEventListener("keyup", e => {
+            if (ingredient_search.value !== "") {
+                // Send ajax request
+                const http = new XMLHttpRequest();
+                const url = "{{ params['path'] }}"  + "/api/ingredients?q=" + encodeURI(ingredient_search.value);
+
+                http.addEventListener("load", e => {
+                    if (e.target.status !== 200) {
+                        document.getElementById("modal_info").innerText = "Erreur serveur, reportez à l'admin"
+                        console.log(e.target)
+                    } 
+                    else {
+                        let ingredient_selector = document.getElementById("ingredient_selector");
+                        ingredient_selector.innerHTML = "";
+                        for (let ingredient of JSON.parse(e.target.response).data) {
+                            ingredient_selector.innerHTML += "<option ingredient_id='"+ingredient.id+"' name='"+ingredient.name+"'>"+ingredient.name+"</option>"
+                        }
+                    }
+                });
+
+                http.addEventListener("error", e => {
+                    document.getElementById("modal_info").innerText = "Erreur lors de la requête."
+                });
+
+                http.open("GET", url);
+                http.send();                
+            }
+        });
+
+        // Add selected ingredient to form
+        let number_of_ingredients_add = 0;
+        let number_of_ingredients_search = 0;
+        document.getElementById("add_selected_ingredient").addEventListener("click", e => {
+            
+            const select = document.getElementById("ingredient_selector");
+            if (select.options[select.selectedIndex]) {
+                const ingredient = select.options[select.selectedIndex].value;
+                const ingredient_id = select.options[select.selectedIndex].getAttribute("ingredient_id");
+        
+                let ingredient_html = ""
+                if (modal_owner == "add_meal") {
+                    number_of_ingredients_add++;
+                    ingredient_html = "<div ingredient_id='"+ingredient_id+"'><input id=ingredient_"+number_of_ingredients_add+" type='text' name='ingredient_"+number_of_ingredients_add+"' value='"+ingredient+"' disabled><button id='remove_ingredient_"+number_of_ingredients_add+"' type='button'>Supprimer</button></div>"
+                    document.getElementById("ingredient_list").insertAdjacentHTML("beforeend", ingredient_html);
+                    let ingredient_list = document.getElementById("ingredient_list");
+                    ingredient_list.childNodes[ingredient_list.childNodes.length - 1].onclick = e => {
+                        e.target.parentElement.remove();
+                        number_of_ingredients_add--;
+                    };
+                } 
+                else if (modal_owner == "search_meal") {
+                    number_of_ingredients_search++;
+                    ingredient_html = "<div ingredient_id='"+ingredient_id+"'><input id=search_ingredient_"+number_of_ingredients_search+" type='text' name='ingredient_"+number_of_ingredients_search+"' value='"+ingredient+"' disabled><button id='search_remove_ingredient_"+number_of_ingredients_search+"' type='button'>Supprimer</button></div>"
+                    document.getElementById("ingredient_list_search").insertAdjacentHTML("beforeend", ingredient_html);
+                    let ingredient_list = document.getElementById("ingredient_list_search");
+                    console.log(ingredient_list.childNodes)
+                    ingredient_list.childNodes[ingredient_list.childNodes.length - 1].onclick = e => {
+                        e.target.parentElement.remove();
+                        number_of_ingredients_search--;
+                    };
+                }
+                
+                add_ingredient_modal_close();
+            }
+            else {
+                document.getElementById("modal_info").innerHTML = "Vous devez sélectionner un ingrédient!";
+            }
+        });
+
+        /* Delete ingredient */
+        // Selection
+        let ingredient_search_delete = document.getElementById("ingredient_search_delete");
+        ingredient_search_delete.addEventListener("keyup", e => {
+            if (ingredient_search_delete.value !== "") {
+                // Send ajax request
+                const http = new XMLHttpRequest();
+                const url = "{{ params['path'] }}"  + "/api/ingredients?q=" + encodeURI(ingredient_search_delete.value);
+
+                http.addEventListener("load", e => {
+                    if (e.target.status !== 200) {
+                        document.getElementById("delete_ingredient_info").innerText = "Erreur serveur, reportez à l'admin"
+                        console.log(e.target)
+                    } 
+                    else {
+                        let ingredient_selector = document.getElementById("ingredient_selector_delete");
+                        ingredient_selector.innerHTML = "";
+                        for (let ingredient of JSON.parse(e.target.response).data) {
+                            ingredient_selector.innerHTML += "<option ingredient_id='"+ingredient.id+"' name='"+ingredient.name+"'>"+ingredient.name+"</option>"
+                        }
+                    }
+                });
+
+                http.addEventListener("error", e => {
+                    document.getElementById("delete_ingredient_info").innerText = "Erreur lors de la requête."
+                });
+
+                http.open("GET", url);
+                http.send();   
+            }
+        });
+
+        // Deletion
+        document.getElementById("delete_selected_ingredient").addEventListener("click", e => {
+            let select = document.getElementById("ingredient_selector_delete");
+            let is_any_selected = select.options[select.selectedIndex]
+            if (is_any_selected) {
+                let ingredient_to_delete_id = select.options[select.selectedIndex].getAttribute("ingredient_id");
+                let info = document.getElementById("delete_ingredient_info");
+
+                const http = new XMLHttpRequest();
+                const url = "{{ params['path'] }}"  + "/api/ingredients/" + encodeURI(ingredient_to_delete_id);
+
+                http.addEventListener("load", e => {
+                    if (e.target.status !== 200) {
+                        info.innerText = "Erreur serveur, reportez à l'admin."
+                        console.log(e.target)
+                    }
+                    else {
+                        info.innerText = "Supprimé !"
+                    }
+                });
+
+                http.addEventListener("error", e => {
+                    info.innerText = "Erreur lors de la requête. Reportez à l'admin."
+                    console.log(e);
+                });
+
+                http.open("DELETE", url);
+                http.send();
+            }
+            else {
+                info.innerText = "Veuillez sélectionner un ingrédient pour le supprimer."
+            }
+        });
+
+
+        // Add a meal to the databse, sends Ajax request to the server, and notifies user
+        function add_meal() {
+            const meal_title = document.getElementById("meal_title").value;
+            if (meal_title === "") {
+                document.getElementById("meal_added").innerText = "Le champ 'titre' est requis."
+            }
+            else {
+                const http = new XMLHttpRequest()
+                const url = "{{ params['path'] }}"  + "/api/meals"
+                form_data = new FormData(document.getElementById("add_meal_form"))
+                
+                let ingredients = []
+                let ingredient_list = document.getElementById("ingredient_list");
+                if (ingredient_list.hasChildNodes()) {
+                    for (let i = 0; i < ingredient_list.childNodes.length; i++) {
+                        let ingredient_id = parseInt(ingredient_list.childNodes[i].getAttribute("ingredient_id"));
+                        ingredients.push(ingredient_id);
+                        //form_data.delete("ingredient_" + i);
+                    }
+                }
+                form_data.append("ingredients", JSON.stringify(ingredients));
+
+                http.addEventListener("load", e => {
+                    if (JSON.parse(e.target.response).code == 2) {
+                        document.getElementById("meal_added").innerText = "Ce plat existe déjà."
+                    }
+                    else if (e.target.status !== 200) {
+                        document.getElementById("meal_added").innerText = "Erreur serveur, reportez à l'admin."
+                        console.log(e.target)
+                    } 
+                    else {
+                        document.getElementById("meal_added").innerText = "Ajouté!"
+                    }
+                });
+
+                http.addEventListener("error", e => {
+                    document.getElementById("meal_added").innerText = "Erreur lors de la requête."
+                });
+
+                http.open("POST", url);
+                http.send(form_data);
+            }
+        }
+
+
+        /* New ingredient */
+        document.getElementById("new_ingredient").addEventListener("click", e => {
+            let name = document.getElementById("new_ingredient_name").value;
+            let info = document.getElementById("new_ingredient_info");
+            
+            const http = new XMLHttpRequest()
+            const url = "{{ params['path'] }}"  + "/api/ingredients"
+            form_data = new FormData();
+            form_data.append("name", name);
+
+            http.addEventListener("load", e => {
+                let response_data = JSON.parse(e.target.response);
+                if (response_data.code == 2) {
+                    info.innerText = "L'ingrédient existe déjà."
+                }
+                else if (response_data.code == 1) {
+                    info.innerText = "Veuillez préciser un ingrédient"
+                }
+                else if (e.target.status !== 200) {
+                    info.innerText = "Erreur serveur, reportez à l'admin."
+                    console.log(e.target)
+                }
+                else {
+                    info.innerText = "Ajouté!"
+                }
+            });
+
+            http.addEventListener("error", e => {
+                info.innerText = "Erreur lors de l'ajout"
+            });
+
+            http.open("POST", url);
+            http.send(form_data);
+        });
+    </script>
+</html>

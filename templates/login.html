@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <h3>Mot de Passe</h3>
+        <form method="POST" action="{{ params[path] }}">
+            <input name="password" hint="password" type="password">
+            <button type="submit">Entrer</button>
+        </form>
+        <p style="color: red;">{% if login_failed %}Mot de passe erroné{% endif %}</p>
+    </body>
+</html>

@@ -1,0 +1,7 @@
+Ideas for 1.1:
+    - git integration
+    - config file load
+
+Issues:
+    FrontEnd:
+        - Resetting modal form input when closed
