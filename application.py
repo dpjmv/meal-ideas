@@ -459,7 +459,7 @@ def ingredients():
 
         if request.args.get("q"):
             if mode == "search":
-                query = unidecode.unidecode(request.args.get("q")) + "%"
+                query = "%" + unidecode.unidecode(request.args.get("q")) + "%"
                 response_data = cur.execute("SELECT * FROM ingredients WHERE name LIKE ?", 
                                             [query]).fetchall()
 
