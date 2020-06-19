@@ -35,7 +35,7 @@ def respond(data):
 
 
 def template(*args, **kwargs):
-    return render_template(*args, **kwargs, params=params)
+    return render_template(*args, **kwargs, params=jinja_params)
 
 
 def db_cursor():
