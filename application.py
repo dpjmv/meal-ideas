@@ -145,6 +145,7 @@ def meals():
             random mode:
                 a single meal object matching the query
         errors:
+            1  -> Invalid search mode
             3  -> Invalid meal entry
             4  -> Invalid meal time
             5  -> Invalid season
@@ -158,6 +159,8 @@ def meals():
         mode = request.args.get("mode")
         if not mode:
             mode == "search"
+        if not mode in ("search", "random"):
+            return error("Invalid search mode: %" % mode, 1)
 
         data = {
             "title": request.args.get("title"),
