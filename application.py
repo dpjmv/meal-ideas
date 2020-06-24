@@ -160,7 +160,7 @@ def meals():
         if not mode:
             mode == "search"
         elif not mode in ("search", "random"):
-            return error("Invalid search mode: %" % mode, 1)
+            return error("Invalid search mode: {0}, should be search or random.".format(mode), 1)
 
         data = {
             "title": request.args.get("title"),
@@ -461,7 +461,7 @@ def ingredients():
         if not mode:
             mode = "search"
         elif not mode in ("search", "many"):
-            return error("Invalid search mode: %" % mode, 4)
+            return error("Invalid search mode: {0}, should be search or many".format(mode), 4)
 
         if request.args.get("q"):
             if mode == "search":
