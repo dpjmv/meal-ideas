@@ -159,7 +159,7 @@ def meals():
         mode = request.args.get("mode")
         if not mode:
             mode == "search"
-        if not mode in ("search", "random"):
+        elif not mode in ("search", "random"):
             return error("Invalid search mode: %" % mode, 1)
 
         data = {
@@ -453,12 +453,15 @@ def ingredients():
             1 -> missing parameter 'q'
             2 -> invalid value for 'mode' 
             3 -> malformed request, couldn't parse it
+            4 -> invalid search mode
         """
         cur = db_cursor()
 
         mode = request.args.get("mode")
         if not mode:
             mode = "search"
+        elif not mode in ("search", "many"):
+            return error("Invalid search mode: %" % mode, 4)
 
         if request.args.get("q"):
             if mode == "search":
